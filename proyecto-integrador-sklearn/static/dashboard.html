@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RikiNode AI · Dashboard Ejecutivo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --cyan:#3DFDFD;--blue:#2776D0;--night:#000611;--midnight:#011E3C;
+  --surface:#0A1A2F;--border:#12304F;--text:#F3F9FC;--text2:#9FB4C7;
+  --ok:#2EE6A6;--warn:#FFC857;--error:#FF5C7A;--info:#4DA3FF;
+  --purple:#A78BFA;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--night);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  line-height:1.5;min-height:100vh;
+}
+
+/* HEADER */
+header{
+  background:var(--midnight);border-bottom:1px solid var(--border);
+  padding:14px 32px;display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:12px;
+  backdrop-filter:blur(12px);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  font-size:1.3rem;font-weight:700;
+  background:linear-gradient(90deg,var(--cyan),var(--blue));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.brand .version{
+  font-size:.7rem;padding:3px 10px;border-radius:12px;
+  background:rgba(61,253,253,.12);color:var(--cyan);
+  border:1px solid rgba(61,253,253,.3);font-weight:600;
+}
+.brand .live{
+  display:flex;align-items:center;gap:6px;
+  font-size:.75rem;color:var(--ok);font-weight:500;
+}
+.brand .live .dot{
+  width:8px;height:8px;border-radius:50%;background:var(--ok);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+nav button,nav a{
+  padding:9px 16px;border-radius:8px;font-size:.85rem;
+  text-decoration:none;cursor:pointer;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);transition:all .2s;
+  font-family:inherit;font-weight:500;display:inline-flex;align-items:center;gap:6px;
+}
+nav button:hover,nav a:hover{background:var(--border);border-color:var(--cyan)}
+nav .primary{
+  background:linear-gradient(90deg,var(--cyan),var(--blue));
+  color:var(--night);border:none;font-weight:600;
+}
+nav .primary:hover{filter:brightness(1.1);box-shadow:0 0 20px rgba(61,253,253,.4)}
+
+/* MAIN */
+main{padding:24px 32px;max-width:1600px;margin:0 auto}
+.section-title{
+  display:flex;align-items:center;gap:10px;margin:0 0 16px;
+  font-size:1.05rem;font-weight:600;color:var(--text);
+}
+.section-title .icon{font-size:1.2rem}
+.section-title .sub{
+  margin-left:auto;font-size:.8rem;color:var(--text2);font-weight:400;
+}
+
+/* KPI GRID */
+.kpi-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;margin-bottom:24px;
+}
+.kpi{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:12px;padding:18px 20px;
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--border);
+}
+.kpi.ok::before{background:var(--ok)}
+.kpi.warn::before{background:var(--warn)}
+.kpi.error::before{background:var(--error)}
+.kpi.cyan::before{background:var(--cyan)}
+.kpi.blue::before{background:var(--blue)}
+.kpi.purple::before{background:var(--purple)}
+.kpi:hover{border-color:rgba(61,253,253,.4);transform:translateY(-2px)}
+.kpi-label{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text2);font-weight:500;margin-bottom:8px;
+}
+.kpi-value{font-size:1.9rem;font-weight:700;color:var(--text);line-height:1.1}
+.kpi.ok .kpi-value{color:var(--ok)}
+.kpi.warn .kpi-value{color:var(--warn)}
+.kpi.error .kpi-value{color:var(--error)}
+.kpi.cyan .kpi-value{color:var(--cyan)}
+.kpi.purple .kpi-value{color:var(--purple)}
+.kpi-sub{font-size:.72rem;color:var(--text2);margin-top:6px}
+.kpi-badge{
+  position:absolute;top:16px;right:16px;font-size:.65rem;
+  padding:3px 8px;border-radius:10px;font-weight:600;
+  background:rgba(46,230,166,.15);color:var(--ok);
+}
+.kpi.warn .kpi-badge{background:rgba(255,200,87,.15);color:var(--warn)}
+.kpi.error .kpi-badge{background:rgba(255,92,122,.15);color:var(--error)}
+
+/* CHARTS GRID */
+.charts-grid{
+  display:grid;gap:20px;margin-bottom:24px;
+}
+.charts-grid.two{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+.chart-card{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.chart-card .chart-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:16px;
+}
+.chart-card h3{
+  font-size:.95rem;font-weight:600;color:var(--text);margin:0;
+  display:flex;align-items:center;gap:8px;
+}
+.chart-card .chart-sub{font-size:.75rem;color:var(--text2);margin-top:4px}
+.chart-card .chart-body{position:relative;height:260px}
+.chart-card .chart-badge{
+  font-size:.7rem;padding:4px 10px;border-radius:10px;
+  background:rgba(61,253,253,.1);color:var(--cyan);font-weight:600;
+}
+
+/* TEST BADGE */
+.test-legend{
+  display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;
+  padding-top:16px;border-top:1px solid var(--border);
+}
+.test-legend-item{
+  display:flex;align-items:center;gap:6px;font-size:.82rem;
+}
+.test-legend-dot{width:10px;height:10px;border-radius:2px}
+
+/* FORMS */
+.forms-grid{display:grid;gap:20px;margin-bottom:24px}
+.forms-grid.two{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+.form-card{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.form-card h3{
+  font-size:.95rem;margin-bottom:16px;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.field{margin-bottom:14px}
+.field label{
+  display:block;font-size:.78rem;color:var(--text2);
+  margin-bottom:6px;font-weight:500;
+}
+.field input,.field textarea{
+  width:100%;padding:11px 14px;background:var(--night);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:.9rem;outline:none;
+  transition:border .2s;font-family:inherit;
+}
+.field input:focus,.field textarea:focus{border-color:var(--cyan)}
+.field textarea{resize:vertical;min-height:80px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  padding:10px 18px;background:linear-gradient(90deg,var(--cyan),var(--blue));
+  color:var(--night);border:none;border-radius:8px;font-weight:600;
+  cursor:pointer;font-size:.85rem;transition:all .2s;font-family:inherit;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover:not(:disabled){filter:brightness(1.1);box-shadow:0 0 20px rgba(61,253,253,.35)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.secondary{
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);
+}
+.btn.secondary:hover:not(:disabled){background:var(--border);box-shadow:none}
+.btn.danger{background:var(--error);color:white}
+.btn.success{background:var(--ok);color:var(--night)}
+
+/* RESULT BOX */
+.result{
+  background:var(--night);border:1px solid var(--border);
+  border-radius:8px;padding:14px;margin-top:14px;
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:.78rem;white-space:pre-wrap;word-break:break-word;
+  max-height:240px;overflow-y:auto;color:var(--text2);
+  display:none;
+}
+.result.show{display:block}
+.result.ok{border-color:var(--ok);color:var(--ok)}
+.result.error{border-color:var(--error);color:var(--error)}
+
+/* TESTS */
+.tests-card{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:12px;padding:20px;margin-bottom:24px;
+}
+.tests-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;flex-wrap:wrap;gap:12px;
+}
+.tests-summary{
+  display:grid;grid-template-columns:200px 1fr;gap:24px;
+  margin-bottom:20px;
+}
+.tests-summary .chart-body{height:200px}
+.tests-stats{display:flex;flex-direction:column;justify-content:center;gap:12px}
+.test-stat{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:var(--night);border-radius:8px;
+  border-left:3px solid var(--border);
+}
+.test-stat.pass{border-left-color:var(--ok)}
+.test-stat.fail{border-left-color:var(--error)}
+.test-stat.warn{border-left-color:var(--warn)}
+.test-stat-label{font-size:.82rem;color:var(--text2);display:flex;align-items:center;gap:8px}
+.test-stat-value{font-size:1.2rem;font-weight:700}
+.test-stat.pass .test-stat-value{color:var(--ok)}
+.test-stat.fail .test-stat-value{color:var(--error)}
+.test-stat.warn .test-stat-value{color:var(--warn)}
+
+.score-box{
+  background:linear-gradient(135deg,rgba(61,253,253,.08),rgba(39,118,208,.08));
+  border:1px solid rgba(61,253,253,.3);border-radius:10px;
+  padding:20px;margin-top:20px;
+}
+.score-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.score-header .label{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.score-header .value{font-size:2rem;font-weight:700;color:var(--cyan)}
+.score-bar{
+  height:12px;background:var(--border);border-radius:6px;overflow:hidden;
+}
+.score-fill{
+  height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));
+  transition:width .8s cubic-bezier(0.4,0,0.2,1);border-radius:6px;
+}
+.score-detail{
+  font-size:.78rem;color:var(--text2);margin-top:10px;
+  display:flex;gap:16px;flex-wrap:wrap;
+}
+
+.tests-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:8px;
+}
+.test-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--night);border-radius:6px;
+  font-size:.82rem;border-left:3px solid var(--border);
+}
+.test-item.pass{border-left-color:var(--ok)}
+.test-item.fail{border-left-color:var(--error)}
+.test-item.warn{border-left-color:var(--warn)}
+.test-item .icon{font-size:1rem;flex-shrink:0}
+.test-item .name{flex:1;color:var(--text)}
+.test-item .detail{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  color:var(--text2);padding:2px 8px;background:var(--midnight);
+  border-radius:4px;
+}
+
+/* METRICS GRID */
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;margin-bottom:16px;
+}
+.metric-card{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:10px;padding:16px;position:relative;overflow:hidden;
+  transition:all .2s;
+}
+.metric-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--cyan);transform:scaleX(0);transition:transform .3s;
+  transform-origin:left;
+}
+.metric-card:hover::after{transform:scaleX(1)}
+.metric-card .metric-key{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--text2);margin-bottom:8px;
+  font-family:'JetBrains Mono',monospace;
+}
+.metric-card .metric-value{font-size:1.6rem;font-weight:700;color:var(--cyan)}
+.metric-card .metric-unit{font-size:.78rem;color:var(--text2);margin-left:4px}
+
+.metrics-raw{
+  background:var(--night);border:1px solid var(--border);
+  border-radius:10px;padding:16px;
+}
+.metrics-raw summary{
+  cursor:pointer;font-size:.82rem;color:var(--text2);
+  user-select:none;font-weight:500;
+}
+.metrics-raw summary:hover{color:var(--cyan)}
+.metrics-raw pre{
+  margin-top:12px;font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;color:var(--text2);white-space:pre-wrap;
+  max-height:300px;overflow-y:auto;line-height:1.6;
+}
+
+/* ARCHITECTURE */
+.arch-card{
+  background:var(--midnight);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.arch-card svg{max-width:100%;height:auto;display:block;margin:0 auto}
+
+/* FOOTER */
+footer{
+  background:var(--midnight);border-top:1px solid var(--border);
+  padding:16px 32px;text-align:center;color:var(--text2);
+  font-size:.78rem;margin-top:32px;
+}
+
+/* SPINNER */
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(255,255,255,.3);border-top-color:currentColor;
+  border-radius:50%;animation:spin .8s linear infinite;
+  vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;padding:14px 20px;
+  background:var(--midnight);border:1px solid var(--cyan);
+  border-radius:10px;color:var(--text);font-size:.85rem;
+  box-shadow:0 10px 40px rgba(0,0,0,.5);
+  transform:translateY(100px);opacity:0;transition:all .3s;
+  z-index:1000;max-width:400px;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--ok)}
+.toast.error{border-color:var(--error)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  header{padding:12px 16px}
+  main{padding:16px}
+  .tests-summary{grid-template-columns:1fr}
+  .kpi-value{font-size:1.5rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="logo">◉ RikiNode AI</span>
+    <span class="version" id="header-version">v—</span>
+    <span class="live" id="header-live">
+      <span class="dot"></span> LIVE
+    </span>
+  </div>
+  <nav>
+    <button onclick="refreshAll()">↻ Refresh</button>
+    <a id="repo-link" href="https://github.com/DAVID-10232/proyecto-integrador-sklearn.git" target="_blank">
+      📦 GitHub
+    </a>
+    <a href="/docs" target="_blank" class="primary">📚 API Docs</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ KPI ROW ============ -->
+<div class="section-title">
+  <span class="icon">📊</span> Estado del Sistema
+  <span class="sub" id="last-update">Actualizado: —</span>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi cyan" id="kpi-status">
+    <div class="kpi-badge" id="kpi-status-badge">HEALTHY</div>
+    <div class="kpi-label">Estado del servicio</div>
+    <div class="kpi-value" id="kpi-status-val">—</div>
+    <div class="kpi-sub">API FastAPI + Uvicorn</div>
+  </div>
+  <div class="kpi ok" id="kpi-model">
+    <div class="kpi-badge" id="kpi-model-badge">LOADED</div>
+    <div class="kpi-label">Modelo ML</div>
+    <div class="kpi-value" id="kpi-model-val">—</div>
+    <div class="kpi-sub">TF-IDF + LogisticRegression</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Predicciones totales</div>
+    <div class="kpi-value" id="kpi-predictions">0</div>
+    <div class="kpi-sub">Desde el inicio</div>
+  </div>
+  <div class="kpi purple">
+    <div class="kpi-label">Requests HTTP</div>
+    <div class="kpi-value" id="kpi-requests">0</div>
+    <div class="kpi-sub">Total acumulado</div>
+  </div>
+  <div class="kpi warn" id="kpi-latency">
+    <div class="kpi-label">Latencia P95</div>
+    <div class="kpi-value" id="kpi-latency-val">—</div>
+    <div class="kpi-sub">Percentil 95</div>
+  </div>
+  <div class="kpi ok">
+    <div class="kpi-label">Disponibilidad</div>
+    <div class="kpi-value" id="kpi-uptime">100%</div>
+    <div class="kpi-sub">Desde última recarga</div>
+  </div>
+</div>
+
+<!-- ============ CHARTS ROW ============ -->
+<div class="section-title">
+  <span class="icon">📈</span> Analítica en Tiempo Real
+  <span class="sub">Actualización automática cada 15s</span>
+</div>
+
+<div class="charts-grid two">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <h3>🎯 Distribución de predicciones</h3>
+        <div class="chart-sub">Sentimiento por clase</div>
+      </div>
+      <span class="chart-badge" id="pred-total-badge">0 total</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="chart-predictions"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <h3>⚡ Histograma de latencia</h3>
+        <div class="chart-sub">Distribución de tiempos de respuesta</div>
+      </div>
+      <span class="chart-badge" id="latency-badge">0 muestras</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="chart-latency"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ============ INTERACTIVE FORMS ============ -->
+<div class="section-title">
+  <span class="icon">🧪</span> Pruebas Interactivas
+</div>
+
+<div class="forms-grid two">
+  <!-- LOGIN -->
+  <div class="form-card">
+    <h3>🔐 Autenticación JWT</h3>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" value="admin@rikinode.com">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" value="admin123">
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="doLogin()">Iniciar sesión</button>
+      <button class="btn secondary" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+    <div class="result" id="login-result"></div>
+  </div>
+
+  <!-- PREDICT -->
+  <div class="form-card">
+    <h3>🎯 Predicción de sentimiento</h3>
+    <div class="field">
+      <label>Texto a analizar</label>
+      <textarea id="predict-text">I love this product, it's amazing!</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="doPredict()">Predecir</button>
+      <button class="btn secondary" onclick="doPredictBatch()">Batch</button>
+    </div>
+    <div class="result" id="predict-result"></div>
+  </div>
+</div>
+
+<!-- ============ TESTS ============ -->
+<div class="section-title">
+  <span class="icon">✅</span> Suite de Pruebas (20 tests)
+  <span class="sub">Mismas pruebas que el backend</span>
+</div>
+
+<div class="tests-card">
+  <div class="tests-header">
+    <div>
+      <h3 style="font-size:1rem;margin:0">Suite Completa</h3>
+      <p style="color:var(--text2);font-size:.8rem;margin-top:4px">
+        Health, Auth, Predict, Validación, Seguridad, Métricas y Rendimiento
+      </p>
+    </div>
+    <button class="btn" id="btn-run-tests" onclick="runFullTest()">
+      ▶ Ejecutar suite
+    </button>
+  </div>
+
+  <div class="tests-summary" id="tests-summary" style="display:none">
+    <div class="chart-body">
+      <canvas id="chart-tests"></canvas>
+    </div>
+    <div class="tests-stats">
+      <div class="test-stat pass">
+        <span class="test-stat-label">✅ Pasadas</span>
+        <span class="test-stat-value" id="stat-pass">0</span>
+      </div>
+      <div class="test-stat warn">
+        <span class="test-stat-label">⚠️ Advertencias</span>
+        <span class="test-stat-value" id="stat-warn">0</span>
+      </div>
+      <div class="test-stat fail">
+        <span class="test-stat-label">❌ Fallidas</span>
+        <span class="test-stat-value" id="stat-fail">0</span>
+      </div>
+      <div class="test-stat">
+        <span class="test-stat-label">📊 Total</span>
+        <span class="test-stat-value" id="stat-total">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tests-grid" id="tests-container"></div>
+
+  <div class="score-box" id="score-box" style="display:none">
+    <div class="score-header">
+      <span class="label">Puntuación Global</span>
+      <span class="value" id="score-value">0/100</span>
+    </div>
+    <div class="score-bar">
+      <div class="score-fill" id="score-fill" style="width:0%"></div>
+    </div>
+    <div class="score-detail" id="score-detail"></div>
+  </div>
+</div>
+
+<!-- ============ METRICS ============ -->
+<div class="section-title">
+  <span class="icon">📡</span> Métricas Prometheus
+  <span class="sub">Parseadas del endpoint /metrics</span>
+</div>
+
+<div class="metrics-grid" id="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-key">ai_predictions_total</div>
+    <div class="metric-value" id="m-pred-total">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-key">ai_predictions_positive</div>
+    <div class="metric-value" id="m-pred-pos">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-key">ai_predictions_negative</div>
+    <div class="metric-value" id="m-pred-neg">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-key">ai_model_loaded</div>
+    <div class="metric-value" id="m-model-loaded">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-key">latency_count</div>
+    <div class="metric-value" id="m-latency-count">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-key">http_requests_total</div>
+    <div class="metric-value" id="m-http-total">0</div>
+  </div>
+</div>
+
+<details class="metrics-raw">
+  <summary>Ver métricas crudas (formato Prometheus)</summary>
+  <pre id="metrics-raw">—</pre>
+</details>
+
+<!-- ============ ARCHITECTURE ============ -->
+<div class="section-title">
+  <span class="icon">🏗️</span> Arquitectura del Sistema
+</div>
+
+<div class="arch-card">
+  <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#3DFDFD"/>
+      </marker>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#3DFDFD"/>
+        <stop offset="100%" stop-color="#2776D0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Cliente -->
+    <rect x="40" y="40" width="180" height="70" rx="10" fill="#0A1A2F" stroke="#3DFDFD" stroke-width="2"/>
+    <text x="130" y="68" fill="#F3F9FC" font-size="13" text-anchor="middle" font-weight="600">👤 Cliente</text>
+    <text x="130" y="86" fill="#9FB4C7" font-size="10" text-anchor="middle">Navegador / Dashboard</text>
+    <text x="130" y="100" fill="#9FB4C7" font-size="9" text-anchor="middle">/dashboard</text>
+
+    <line x1="220" y1="75" x2="320" y2="75" stroke="#3DFDFD" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="270" y="65" fill="#3DFDFD" font-size="10" text-anchor="middle">HTTPS + JWT</text>
+
+    <!-- FastAPI -->
+    <rect x="320" y="30" width="260" height="220" rx="10" fill="#011E3C" stroke="#2776D0" stroke-width="2"/>
+    <text x="450" y="56" fill="#3DFDFD" font-size="14" text-anchor="middle" font-weight="700">⚡ FastAPI</text>
+    <text x="450" y="72" fill="#9FB4C7" font-size="10" text-anchor="middle">Python 3.12 + Uvicorn</text>
+
+    <rect x="340" y="86" width="220" height="30" rx="5" fill="#0A1A2F" stroke="#12304F"/>
+    <text x="450" y="106" fill="#F3F9FC" font-size="10" text-anchor="middle">POST /api/v1/auth/login</text>
+
+    <rect x="340" y="124" width="220" height="30" rx="5" fill="#0A1A2F" stroke="#12304F"/>
+    <text x="450" y="144" fill="#F3F9FC" font-size="10" text-anchor="middle">POST /api/v1/predict/</text>
+
+    <rect x="340" y="162" width="220" height="30" rx="5" fill="#0A1A2F" stroke="#12304F"/>
+    <text x="450" y="182" fill="#F3F9FC" font-size="10" text-anchor="middle">GET /health</text>
+
+    <rect x="340" y="200" width="220" height="30" rx="5" fill="#0A1A2F" stroke="#12304F"/>
+    <text x="450" y="220" fill="#F3F9FC" font-size="10" text-anchor="middle">GET /metrics</text>
+
+    <!-- Modelo ML -->
+    <rect x="660" y="30" width="200" height="90" rx="10" fill="#011E3C" stroke="#2EE6A6" stroke-width="2"/>
+    <text x="760" y="58" fill="#2EE6A6" font-size="13" text-anchor="middle" font-weight="700">🤖 Modelo ML</text>
+    <text x="760" y="76" fill="#9FB4C7" font-size="10" text-anchor="middle">TF-IDF + LogisticRegression</text>
+    <text x="760" y="92" fill="#9FB4C7" font-size="10" text-anchor="middle">sentiment_model.joblib</text>
+    <text x="760" y="108" fill="#9FB4C7" font-size="9" text-anchor="middle">scikit-learn 1.3</text>
+    <line x1="580" y1="130" x2="660" y2="90" stroke="#2EE6A6" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Prometheus -->
+    <rect x="660" y="150" width="200" height="80" rx="10" fill="#011E3C" stroke="#FFC857" stroke-width="2"/>
+    <text x="760" y="178" fill="#FFC857" font-size="13" text-anchor="middle" font-weight="700">📊 Prometheus</text>
+    <text x="760" y="196" fill="#9FB4C7" font-size="10" text-anchor="middle">/metrics endpoint</text>
+    <text x="760" y="212" fill="#9FB4C7" font-size="10" text-anchor="middle">ai_predictions_total</text>
+    <text x="760" y="226" fill="#9FB4C7" font-size="9" text-anchor="middle">ai_prediction_latency</text>
+    <line x1="580" y1="215" x2="660" y2="190" stroke="#FFC857" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Docker -->
+    <rect x="320" y="280" width="540" height="70" rx="10" fill="#011E2C" stroke="#3DFDFD" stroke-width="1.5" stroke-dasharray="6 3"/>
+    <text x="590" y="308" fill="#3DFDFD" font-size="12" text-anchor="middle" font-weight="700">🐳 Docker Container</text>
+    <text x="590" y="325" fill="#9FB4C7" font-size="10" text-anchor="middle">python:3.12-slim · multi-stage build · healthcheck</text>
+    <text x="590" y="340" fill="#9FB4C7" font-size="9" text-anchor="middle">Imagen ~300 MB · non-root user</text>
+
+    <!-- APScheduler -->
+    <rect x="40" y="280" width="180" height="70" rx="10" fill="#011E3C" stroke="#FFC857" stroke-width="2"/>
+    <text x="130" y="308" fill="#FFC857" font-size="11" text-anchor="middle" font-weight="600">⏰ APScheduler</text>
+    <text x="130" y="324" fill="#9FB4C7" font-size="10" text-anchor="middle">Health check cada 5 min</text>
+    <text x="130" y="340" fill="#9FB4C7" font-size="9" text-anchor="middle">Automatización</text>
+    <line x1="220" y1="315" x2="320" y2="315" stroke="#FFC857" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- CI/CD -->
+    <rect x="40" y="390" width="380" height="70" rx="10" fill="#011E3C" stroke="#2776D0" stroke-width="2"/>
+    <text x="230" y="418" fill="#2776D0" font-size="12" text-anchor="middle" font-weight="700">🔄 CI/CD · GitHub Actions</text>
+    <text x="230" y="436" fill="#9FB4C7" font-size="10" text-anchor="middle">build → test → push a Docker Hub</text>
+    <text x="230" y="450" fill="#9FB4C7" font-size="9" text-anchor="middle">Deploy automatizado en push a main</text>
+    <line x1="230" y1="390" x2="230" y2="350" stroke="#2776D0" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="6 3"/>
+
+    <!-- Leyenda -->
+    <rect x="480" y="390" width="380" height="80" rx="8" fill="#0A1A2F" stroke="#12304F"/>
+    <text x="500" y="410" fill="#9FB4C7" font-size="10" font-weight="600">Leyenda:</text>
+    <rect x="500" y="422" width="14" height="10" fill="#011E3C" stroke="#3DFDFD"/>
+    <text x="522" y="431" fill="#F3F9FC" font-size="9">HTTP/Cliente</text>
+    <rect x="610" y="422" width="14" height="10" fill="#011E3C" stroke="#2EE6A6"/>
+    <text x="632" y="431" fill="#F3F9FC" font-size="9">ML</text>
+    <rect x="680" y="422" width="14" height="10" fill="#011E3C" stroke="#FFC857"/>
+    <text x="702" y="431" fill="#F3F9FC" font-size="9">Métricas</text>
+    <rect x="500" y="442" width="14" height="10" fill="#011E2C" stroke="#3DFDFD" stroke-dasharray="3 1"/>
+    <text x="522" y="451" fill="#F3F9FC" font-size="9">Docker</text>
+    <rect x="610" y="442" width="14" height="10" fill="#011E3C" stroke="#2776D0"/>
+    <text x="632" y="451" fill="#F3F9FC" font-size="9">CI/CD</text>
+  </svg>
+</div>
+
+</main>
+
+<footer>
+  © 2026 RikiNode · Proyecto Integrador · Implementación de Sistemas Inteligentes
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const API_BASE = '';
+const REPO_URL = 'https://github.com/DAVID-10232/proyecto-integrador-sklearn.git';
+let token = localStorage.getItem('rn_token') || '';
+let charts = {};
+let lastMetrics = null;
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('repo-link').href = REPO_URL;
+  initCharts();
+  refreshAll();
+  setInterval(refreshAll, 15000);
+});
+
+// ============================================================
+// CHART DEFAULTS
+// ============================================================
+function initCharts() {
+  Chart.defaults.color = '#9FB4C7';
+  Chart.defaults.borderColor = '#12304F';
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.animation.duration = 600;
+
+  // Predicciones
+  const ctxPred = document.getElementById('chart-predictions').getContext('2d');
+  charts.predictions = new Chart(ctxPred, {
+    type: 'doughnut',
+    data: {
+      labels: ['POSITIVE', 'NEGATIVE'],
+      datasets: [{
+        data: [0, 0],
+        backgroundColor: ['#2EE6A6', '#FF5C7A'],
+        borderColor: '#011E3C',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 16,
+            font: { size: 11, weight: '600' },
+            usePointStyle: true,
+            pointStyle: 'circle',
+          }
+        },
+        tooltip: {
+          backgroundColor: '#0A1A2F',
+          titleColor: '#3DFDFD',
+          bodyColor: '#F3F9FC',
+          borderColor: '#3DFDFD',
+          borderWidth: 1,
+          padding: 12,
+        }
+      }
+    }
+  });
+
+  // Latencia histograma
+  const ctxLat = document.getElementById('chart-latency').getContext('2d');
+  charts.latency = new Chart(ctxLat, {
+    type: 'bar',
+    data: {
+      labels: ['≤5ms', '≤10ms', '≤50ms', '≤100ms', '≤500ms', '≤1s', '>1s'],
+      datasets: [{
+        label: 'Predicciones',
+        data: [0, 0, 0, 0, 0, 0, 0],
+        backgroundColor: 'rgba(61, 253, 253, 0.5)',
+        borderColor: '#3DFDFD',
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0A1A2F',
+          titleColor: '#3DFDFD',
+          bodyColor: '#F3F9FC',
+          borderColor: '#3DFDFD',
+          borderWidth: 1,
+          padding: 12,
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#9FB4C7' },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(18, 48, 79, 0.5)' },
+          ticks: { font: { size: 10 }, color: '#9FB4C7', precision: 0 },
+        }
+      }
+    }
+  });
+
+  // Tests
+  const ctxTests = document.getElementById('chart-tests').getContext('2d');
+  charts.tests = new Chart(ctxTests, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pasadas', 'Advertencias', 'Fallidas'],
+      datasets: [{
+        data: [0, 0, 0],
+        backgroundColor: ['#2EE6A6', '#FFC857', '#FF5C7A'],
+        borderColor: '#011E3C',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0A1A2F',
+          titleColor: '#3DFDFD',
+          bodyColor: '#F3F9FC',
+          borderColor: '#3DFDFD',
+          borderWidth: 1,
+          padding: 12,
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function showResult(elId, text, ok = true) {
+  const el = document.getElementById(elId);
+  el.className = `result show ${ok ? 'ok' : 'error'}`;
+  el.textContent = text;
+}
+
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  return h;
+}
+
+// ============================================================
+// METRICS PARSER
+// ============================================================
+function parsePrometheus(text) {
+  const out = {
+    predictions: { POSITIVE: 0, NEGATIVE: 0 },
+    latencyBuckets: {},
+    latencyCount: 0,
+    latencySum: 0,
+    modelLoaded: 0,
+    httpTotal: 0,
+  };
+  text.split('\n').forEach(line => {
+    if (!line.trim() || line.startsWith('#')) return;
+
+    let m = line.match(/^ai_predictions_total\{label="([^"]+)"\}\s+([\d.]+)/);
+    if (m) out.predictions[m[1]] = parseFloat(m[2]);
+
+    m = line.match(/^ai_prediction_latency_seconds_bucket\{le="([^"]+)"\}\s+([\d.]+)/);
+    if (m) out.latencyBuckets[m[1]] = parseFloat(m[2]);
+
+    m = line.match(/^ai_prediction_latency_seconds_count\s+([\d.]+)/);
+    if (m) out.latencyCount = parseFloat(m[1]);
+
+    m = line.match(/^ai_prediction_latency_seconds_sum\s+([\d.]+)/);
+    if (m) out.latencySum = parseFloat(m[1]);
+
+    m = line.match(/^ai_model_loaded\s+([\d.]+)/);
+    if (m) out.modelLoaded = parseFloat(m[1]);
+
+    m = line.match(/^http_requests_total\{[^}]*\}\s+([\d.]+)/);
+    if (m) out.httpTotal += parseFloat(m[1]);
+  });
+  return out;
+}
+
+function bucketsToHistogram(buckets) {
+  const keys = ['0.005', '0.01', '0.05', '0.1', '0.5', '1.0', '+Inf'];
+  const cum = keys.map(k => buckets[k] || 0);
+  const actual = [];
+  for (let i = 0; i < cum.length; i++) {
+    actual.push(i === 0 ? cum[i] : cum[i] - cum[i - 1]);
+  }
+  return actual;
+}
+
+// ============================================================
+// REFRESH ALL
+// ============================================================
+async function refreshAll() {
+  await Promise.all([
+    loadHealth(),
+    loadMetrics(),
+  ]);
+  document.getElementById('last-update').textContent =
+    'Actualizado: ' + new Date().toLocaleTimeString();
+}
+
+async function loadHealth() {
+  try {
+    const r = await fetch(`${API_BASE}/health`);
+    const data = await r.json();
+
+    const kpiStatus = document.getElementById('kpi-status');
+    const kpiModel = document.getElementById('kpi-model');
+    document.getElementById('kpi-status-val').textContent = data.status || '—';
+    document.getElementById('kpi-model-val').textContent = data.model_loaded ? 'Activo' : 'Inactivo';
+    document.getElementById('header-version').textContent = 'v' + (data.version || '—');
+
+    kpiStatus.className = 'kpi ' + (data.status === 'healthy' ? 'cyan' : 'error');
+    document.getElementById('kpi-status-badge').textContent =
+      data.status === 'healthy' ? 'HEALTHY' : 'DEGRADED';
+    kpiModel.className = 'kpi ' + (data.model_loaded ? 'ok' : 'error');
+    document.getElementById('kpi-model-badge').textContent =
+      data.model_loaded ? 'LOADED' : 'NOT LOADED';
+  } catch (e) {
+    document.getElementById('kpi-status-val').textContent = 'ERROR';
+    document.getElementById('kpi-status').className = 'kpi error';
+  }
+}
+
+async function loadMetrics() {
+  try {
+    const r = await fetch(`${API_BASE}/metrics`);
+    const text = await r.text();
+    lastMetrics = parsePrometheus(text);
+
+    // KPI cards
+    const totalPred = lastMetrics.predictions.POSITIVE + lastMetrics.predictions.NEGATIVE;
+    document.getElementById('kpi-predictions').textContent = totalPred;
+    document.getElementById('kpi-requests').textContent = Math.round(lastMetrics.httpTotal);
+    document.getElementById('m-pred-total').textContent = totalPred;
+    document.getElementById('m-pred-pos').textContent = Math.round(lastMetrics.predictions.POSITIVE);
+    document.getElementById('m-pred-neg').textContent = Math.round(lastMetrics.predictions.NEGATIVE);
+    document.getElementById('m-model-loaded').textContent = lastMetrics.modelLoaded;
+    document.getElementById('m-latency-count').textContent = Math.round(lastMetrics.latencyCount);
+    document.getElementById('m-http-total').textContent = Math.round(lastMetrics.httpTotal);
+
+    // Calcular P95 aproximado
+    let p95 = 0;
+    const totalCount = lastMetrics.latencyCount;
+    if (totalCount > 0) {
+      const target = totalCount * 0.95;
+      const keys = ['0.005', '0.01', '0.05', '0.1', '0.5', '1.0', '+Inf'];
+      for (const k of keys) {
+        const cum = lastMetrics.latencyBuckets[k] || 0;
+        if (cum >= target) {
+          p95 = k === '+Inf' ? 1.0 : parseFloat(k);
+          break;
+        }
+      }
+      if (p95 < 1) p95 = p95 * 1000;
+      else p95 = p95 * 1000;
+    }
+    document.getElementById('kpi-latency-val').textContent =
+      p95 > 0 ? p95.toFixed(0) + ' ms' : '—';
+    const latencyBadge = document.getElementById('latency-badge');
+    latencyBadge.textContent = `${Math.round(totalCount)} muestras`;
+
+    const predBadge = document.getElementById('pred-total-badge');
+    predBadge.textContent = `${totalPred} total`;
+
+    // Update charts
+    charts.predictions.data.datasets[0].data = [
+      lastMetrics.predictions.POSITIVE,
+      lastMetrics.predictions.NEGATIVE,
+    ];
+    charts.predictions.update();
+
+    charts.latency.data.datasets[0].data = bucketsToHistogram(lastMetrics.latencyBuckets);
+    charts.latency.update();
+
+    // Raw
+    const lines = text.split('\n').filter(l =>
+      l.includes('ai_') || l.includes('http_requests_total')
+    );
+    document.getElementById('metrics-raw').textContent = lines.slice(0, 50).join('\n');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const fd = new URLSearchParams();
+  fd.append('username', email);
+  fd.append('password', password);
+
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: fd.toString(),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      showResult('login-result', `❌ Login fallido (${r.status})\n${data.detail || 'Error'}`, false);
+      showToast('Credenciales inválidas', 'error');
+      return;
+    }
+    token = data.access_token;
+    localStorage.setItem('rn_token', token);
+    showResult('login-result',
+      `✅ Login exitoso\n\nToken: ${token.substring(0, 60)}...\nExpira en: ${data.expires_in}s\nTipo: ${data.token_type}`,
+      true);
+    showToast('Login exitoso', 'success');
+  } catch (e) {
+    showResult('login-result', `❌ Error: ${e.message}`, false);
+  }
+}
+
+function doLogout() {
+  token = '';
+  localStorage.removeItem('rn_token');
+  showResult('login-result', '✓ Sesión cerrada', true);
+}
+
+// ============================================================
+// PREDICT
+// ============================================================
+async function doPredict() {
+  if (!token) {
+    showResult('predict-result', '⚠️ Inicia sesión primero', false);
+    return;
+  }
+  const text = document.getElementById('predict-text').value.trim();
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ text }),
+    });
+    const elapsed = (performance.now() - t0).toFixed(1);
+    const data = await r.json();
+    if (!r.ok) {
+      showResult('predict-result', `❌ Error ${r.status}\n${JSON.stringify(data, null, 2)}`, false);
+      return;
+    }
+    showResult('predict-result',
+      `✅ PREDICCIÓN\n\n` +
+      `Label: ${data.label}\n` +
+      `Confianza: ${(data.score * 100).toFixed(2)}%\n` +
+      `Modelo: ${data.model}\n` +
+      `Latencia: ${elapsed}ms`,
+      true);
+    setTimeout(() => loadMetrics(), 500);
+  } catch (e) {
+    showResult('predict-result', `❌ Error: ${e.message}`, false);
+  }
+}
+
+async function doPredictBatch() {
+  if (!token) {
+    showResult('predict-result', '⚠️ Inicia sesión primero', false);
+    return;
+  }
+  const texts = [
+    'Amazing quality, highly recommended',
+    'Terrible service, do not buy',
+    'Excellent product',
+    'Worst purchase ever',
+  ];
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/batch`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ texts }),
+    });
+    const data = await r.json();
+    let msg = `✅ BATCH: ${data.results.length} resultados\n\n`;
+    data.results.forEach((res, i) => {
+      msg += `[${i + 1}] "${texts[i]}"\n    → ${res.label} (${(res.score * 100).toFixed(1)}%)\n`;
+    });
+    showResult('predict-result', msg, true);
+    setTimeout(() => loadMetrics(), 500);
+  } catch (e) {
+    showResult('predict-result', `❌ Error: ${e.message}`, false);
+  }
+}
+
+// ============================================================
+// TEST SUITE
+// ============================================================
+let testResults = { pass: 0, fail: 0, warn: 0, items: [] };
+
+function addTest(name, status, detail = '') {
+  testResults.items.push({ name, status, detail });
+  if (status === 'pass') testResults.pass++;
+  else if (status === 'fail') testResults.fail++;
+  else testResults.warn++;
+  renderTests();
+}
+
+function renderTests() {
+  const container = document.getElementById('tests-container');
+  container.innerHTML = testResults.items.map(t => {
+    const icon = t.status === 'pass' ? '✅' : t.status === 'fail' ? '❌' : '⚠️';
+    return `<div class="test-item ${t.status}">
+      <span class="icon">${icon}</span>
+      <span class="name">${t.name}</span>
+      ${t.detail ? `<span class="detail">${t.detail}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('stat-pass').textContent = testResults.pass;
+  document.getElementById('stat-fail').textContent = testResults.fail;
+  document.getElementById('stat-warn').textContent = testResults.warn;
+  document.getElementById('stat-total').textContent = testResults.items.length;
+
+  charts.tests.data.datasets[0].data = [testResults.pass, testResults.warn, testResults.fail];
+  charts.tests.update();
+}
+
+async function runFullTest() {
+  const btn = document.getElementById('btn-run-tests');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ejecutando...';
+  testResults = { pass: 0, fail: 0, warn: 0, items: [] };
+  renderTests();
+  document.getElementById('tests-summary').style.display = 'grid';
+  document.getElementById('score-box').style.display = 'none';
+
+  // 1. Health
+  try {
+    const r = await fetch(`${API_BASE}/health`);
+    const data = await r.json();
+    addTest('Health check', data.model_loaded ? 'pass' : 'fail',
+      data.model_loaded ? 'OK' : 'model not loaded');
+  } catch (e) { addTest('Health check', 'fail', e.message); }
+
+  // 2. Info
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/info`);
+    addTest('Info endpoint', r.ok ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Info endpoint', 'fail', e.message); }
+
+  // 3-4. Auth
+  let testToken = '';
+  try {
+    const fd = new URLSearchParams();
+    fd.append('username', 'admin@rikinode.com');
+    fd.append('password', 'admin123');
+    const r = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: fd.toString(),
+    });
+    const data = await r.json();
+    testToken = data.access_token || '';
+    addTest('Login válido', r.ok && testToken ? 'pass' : 'fail', testToken ? 'JWT OK' : 'sin token');
+  } catch (e) { addTest('Login válido', 'fail', e.message); }
+
+  try {
+    const fd = new URLSearchParams();
+    fd.append('username', 'admin@rikinode.com');
+    fd.append('password', 'wrong_pass');
+    const r = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: fd.toString(),
+    });
+    addTest('Rechazo credenciales inválidas', r.status === 401 ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Rechazo credenciales inválidas', 'fail', e.message); }
+
+  const authH = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${testToken}`,
+  };
+
+  // 5-6. Predicción POSITIVE + score
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({ text: 'I love this product, it is amazing!' }),
+    });
+    const data = await r.json();
+    addTest('Predicción POSITIVE', data.label === 'POSITIVE' ? 'pass' : 'fail', data.label);
+    addTest('Campo score presente', typeof data.score === 'number' ? 'pass' : 'fail',
+      typeof data.score === 'number' ? `${(data.score * 100).toFixed(0)}%` : 'ausente');
+  } catch (e) {
+    addTest('Predicción POSITIVE', 'fail', e.message);
+    addTest('Campo score presente', 'fail', '—');
+  }
+
+  // 7. Predicción NEGATIVE
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({ text: 'This is terrible, I hate it.' }),
+    });
+    const data = await r.json();
+    addTest('Predicción NEGATIVE', data.label === 'NEGATIVE' ? 'pass' : 'fail', data.label);
+  } catch (e) { addTest('Predicción NEGATIVE', 'fail', e.message); }
+
+  // 8. Batch
+  try {
+    const texts = ['Amazing', 'Terrible', 'Excellent', 'Worst'];
+    const r = await fetch(`${API_BASE}/api/v1/predict/batch`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({ texts }),
+    });
+    const data = await r.json();
+    addTest('Batch predictions', data.results?.length === texts.length ? 'pass' : 'fail',
+      `${data.results?.length || 0}/${texts.length}`);
+  } catch (e) { addTest('Batch predictions', 'fail', e.message); }
+
+  // 9-11. Validación
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({ text: '' }),
+    });
+    addTest('Validación texto vacío', r.status === 422 ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Validación texto vacío', 'fail', e.message); }
+
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({}),
+    });
+    addTest('Validación campo faltante', r.status === 422 ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Validación campo faltante', 'fail', e.message); }
+
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/batch`, {
+      method: 'POST', headers: authH,
+      body: JSON.stringify({ texts: [] }),
+    });
+    addTest('Validación batch vacío', r.status === 422 ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Validación batch vacío', 'fail', e.message); }
+
+  // 12-13. Seguridad
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: 'test' }),
+    });
+    addTest('Rechazo sin token', [401, 403].includes(r.status) ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Rechazo sin token', 'fail', e.message); }
+
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/predict/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer token_falso_12345',
+      },
+      body: JSON.stringify({ text: 'test' }),
+    });
+    addTest('Rechazo token inválido', [401, 403].includes(r.status) ? 'pass' : 'fail', `HTTP ${r.status}`);
+  } catch (e) { addTest('Rechazo token inválido', 'fail', e.message); }
+
+  // 14-17. Métricas
+  try {
+    const r = await fetch(`${API_BASE}/metrics`);
+    const text = await r.text();
+    [
+      ['ai_predictions_total', 'Métrica predictions'],
+      ['ai_prediction_latency_seconds', 'Métrica latencia'],
+      ['ai_model_loaded', 'Métrica model_loaded'],
+      ['http_requests_total', 'Métrica http_total'],
+    ].forEach(([k, n]) => {
+      addTest(n, text.includes(k) ? 'pass' : 'warn', text.includes(k) ? 'presente' : 'ausente');
+    });
+  } catch (e) { addTest('Métricas', 'fail', e.message); }
+
+  // 18-20. Rendimiento
+  try {
+    const N = 50, CONC = 10;
+    const texts = ['I love this', 'Terrible', 'Amazing!', 'Do not buy', 'Highly recommended'];
+    for (let i = 0; i < 3; i++) {
+      await fetch(`${API_BASE}/api/v1/predict/`, {
+        method: 'POST', headers: authH,
+        body: JSON.stringify({ text: texts[i % 5] }),
+      });
+    }
+    const latencies = [];
+    let successes = 0;
+    const t0 = performance.now();
+    for (let i = 0; i < N; i += CONC) {
+      const batch = [];
+      for (let j = 0; j < CONC && i + j < N; j++) {
+        const text = texts[(i + j) % 5];
+        const t = performance.now();
+        batch.push(
+          fetch(`${API_BASE}/api/v1/predict/`, {
+            method: 'POST', headers: authH,
+            body: JSON.stringify({ text }),
+          }).then(r => {
+            latencies.push(performance.now() - t);
+            if (r.ok) successes++;
+          }).catch(() => latencies.push(performance.now() - t))
+        );
+      }
+      await Promise.all(batch);
+    }
+    const totalTime = (performance.now() - t0) / 1000;
+    latencies.sort((a, b) => a - b);
+    const p95 = latencies[Math.floor(latencies.length * 0.95)];
+    const throughput = N / totalTime;
+
+    addTest('Rendimiento: 100% exitoso', successes === N ? 'pass' : 'fail', `${successes}/${N}`);
+    addTest('Rendimiento: P95 < 500ms',
+      p95 < 500 ? 'pass' : (p95 < 1000 ? 'warn' : 'fail'),
+      `${p95.toFixed(0)}ms`);
+    addTest('Rendimiento: throughput ≥ 30 rps',
+      throughput >= 30 ? 'pass' : (throughput >= 10 ? 'warn' : 'fail'),
+      `${throughput.toFixed(1)} rps`);
+  } catch (e) {
+    addTest('Rendimiento', 'fail', e.message);
+  }
+
+  showFinalScore();
+  btn.disabled = false;
+  btn.innerHTML = '▶ Ejecutar suite';
+
+  // Refrescar métricas después
+  await loadMetrics();
+}
+
+function showFinalScore() {
+  const total = testResults.items.length;
+  const score = total > 0
+    ? ((testResults.pass + testResults.warn * 0.5) / total) * 100
+    : 0;
+
+  document.getElementById('score-box').style.display = 'block';
+  document.getElementById('score-value').textContent = `${score.toFixed(1)}/100`;
+  document.getElementById('score-fill').style.width = `${score}%`;
+  document.getElementById('score-detail').innerHTML = `
+    <span>✅ ${testResults.pass} pasadas</span>
+    <span>⚠️ ${testResults.warn} advertencias</span>
+    <span>❌ ${testResults.fail} fallidas</span>
+    <span style="margin-left:auto">Total: ${total} tests</span>
+  `;
+}
+</script>
+
+</body>
+</html>

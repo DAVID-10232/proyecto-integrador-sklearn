@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  ai-service:
+    build: .
+    container_name: rikinode-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=RikiNode AI Service
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-prod}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@rikinode.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - MODEL_PATH=/app/models/sentiment_model.joblib
+      - MODEL_NAME=tfidf-logreg-sentiment-v1
+      - ENABLE_SCHEDULER=true
+      - HEALTH_CHECK_INTERVAL_MINUTES=5
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
